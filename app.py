@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, session, jsonify
 import json
 import os.path
 from werkzeug.utils import secure_filename
@@ -9,7 +9,7 @@ app.secret_key = 'h43hs25aber5ldws'
 
 @app.route('/')
 def home() :
-    return render_template('home.html')
+    return render_template('home.html', codes=session.keys())
 
 # Jinja - template engine - used a lot
 
@@ -37,6 +37,9 @@ def your_url():
         with open('urls.json', 'w') as url_file:
             # json.dumps() function will convert a subset of Python objects into a json string. Not all objects are convertible and you may need to create a dictionary of data you wish to expose before serializing to JSON. 
             json.dump(urls,url_file)
+            # save user data into the cookies 
+            session[request.form['code']] = True
+
         return render_template('your_url.html', code=request.form['code'])
     else :
         return redirect(url_for('home'))
@@ -56,7 +59,13 @@ def redirect_to_url(code) :
 
     return abort(404)
 
-# For 404 not found page 
+# Displaying custom error page 
 @app.errorhandler(404)
 def page_not_found(error) : 
     return render_template('page_not_found.html'), 404
+
+# Introduce JSON API 
+# jsonify - To convert keys into the JSON format and store using
+@app.route('/api')
+def session_api():
+    return jsonify(list(session.keys()))
